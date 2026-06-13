@@ -1,0 +1,169 @@
+package com.student.management.userservice.service;
+
+import com.student.management.userservice.dto.AuthResponse;
+import com.student.management.userservice.dto.LoginRequest;
+import com.student.management.userservice.dto.RegisterRequest;
+import com.student.management.userservice.entity.*;
+import com.student.management.userservice.repository.OtpCodeRepository;
+import com.student.management.userservice.repository.RefreshTokenRepository;
+import com.student.management.userservice.repository.UserRepository;
+import com.student.management.userservice.utils.JwtUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final OtpCodeRepository otpCodeRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+
+    @Transactional
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+        if (user.getStatus() == UserStatus.LOCKED) {
+            throw new BadCredentialsException("Account is locked. Please contact support.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+
+        String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole());
+        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+
+        // Save or update refresh token
+        refreshTokenRepository.findByUser(user).ifPresent(existingToken ->
+                refreshTokenRepository.delete(existingToken));
+
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusDays(7))
+                .build();
+        refreshTokenRepository.save(newRefreshToken);
+
+        return AuthResponse.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken)
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email is already registered");
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .role(request.getRole())
+                .status(UserStatus.ACTIVE)
+                .build();
+        user = userRepository.save(user);
+
+        String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole());
+        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusDays(7))
+                .build();
+        refreshTokenRepository.save(newRefreshToken);
+
+        return AuthResponse.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken)
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse refreshToken(String refreshTokenValue) {
+        RefreshToken storedToken = refreshTokenRepository.findByToken(refreshTokenValue)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+
+        if (storedToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            refreshTokenRepository.delete(storedToken);
+            throw new IllegalArgumentException("Refresh token has expired. Please login again.");
+        }
+
+        User user = storedToken.getUser();
+
+        // Rotate tokens
+        refreshTokenRepository.delete(storedToken);
+
+        String newAccessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole());
+        String newRefreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+
+        RefreshToken newStoredToken = RefreshToken.builder()
+                .token(newRefreshToken)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusDays(7))
+                .build();
+        refreshTokenRepository.save(newStoredToken);
+
+        return AuthResponse.builder()
+                .token(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole())
+                .build();
+    }
+
+    public void forgotPassword(String email) {
+        // Basic placeholder implementation
+        // Generates and stores an OTP for password reset
+        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
+
+        OtpCode otpCode = OtpCode.builder()
+                .email(email)
+                .code(otp)
+                .expiryDate(LocalDateTime.now().plusMinutes(15))
+                .purpose("FORGOT_PASSWORD")
+                .build();
+        otpCodeRepository.save(otpCode);
+
+        // In a real implementation, send OTP via email here
+    }
+
+    public boolean verifyOtp(String email, String otp) {
+        return otpCodeRepository.findByEmailAndCodeAndPurpose(email, otp, "FORGOT_PASSWORD")
+                .map(code -> code.getExpiryDate().isAfter(LocalDateTime.now()))
+                .orElse(false);
+    }
+
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Invalidate all refresh tokens for security
+        refreshTokenRepository.deleteByUser(user);
+    }
+}
