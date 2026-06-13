@@ -34,12 +34,14 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        if (user.getStatus() == UserStatus.LOCKED) {
-            throw new BadCredentialsException("Account is locked. Please contact support.");
-        }
-
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid email or password");
+        }
+
+        // Enforce role cross-checking: the portal role from the frontend must match the database role
+        if (request.getRole() != null
+                && !request.getRole().equalsIgnoreCase(user.getRole().name())) {
+            throw new BadCredentialsException("Unauthorized role access for this portal.");
         }
 
         String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
