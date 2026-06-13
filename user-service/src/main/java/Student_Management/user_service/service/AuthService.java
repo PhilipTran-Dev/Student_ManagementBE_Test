@@ -43,22 +43,19 @@ public class AuthService {
         }
 
         String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
-        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+        String newRefreshTokenValue = jwtUtils.generateRefreshToken(user.getEmail());
 
-        // Save or update refresh token
-        refreshTokenRepository.findByUser(user).ifPresent(existingToken ->
-                refreshTokenRepository.delete(existingToken));
+        // Upsert pattern: update existing token if present, otherwise create new
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
+                .orElse(RefreshToken.builder().user(user).build());
 
-        RefreshToken newRefreshToken = RefreshToken.builder()
-                .token(refreshToken)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusDays(7))
-                .build();
-        refreshTokenRepository.save(newRefreshToken);
+        refreshToken.setToken(newRefreshTokenValue);
+        refreshToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+        refreshTokenRepository.save(refreshToken);
 
         return AuthResponse.builder()
                 .token(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(newRefreshTokenValue)
                 .id(user.getId())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
@@ -89,18 +86,19 @@ public class AuthService {
         user = userRepository.save(user);
 
         String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
-        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+        String newRefreshTokenValue = jwtUtils.generateRefreshToken(user.getEmail());
 
-        RefreshToken newRefreshToken = RefreshToken.builder()
-                .token(refreshToken)
+        // No prior token exists for a brand-new user, so always create
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token(newRefreshTokenValue)
                 .user(user)
                 .expiryDate(LocalDateTime.now().plusDays(7))
                 .build();
-        refreshTokenRepository.save(newRefreshToken);
+        refreshTokenRepository.save(refreshToken);
 
         return AuthResponse.builder()
                 .token(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(newRefreshTokenValue)
                 .id(user.getId())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
@@ -120,22 +118,17 @@ public class AuthService {
 
         User user = storedToken.getUser();
 
-        // Rotate tokens
-        refreshTokenRepository.delete(storedToken);
-
+        // Rotate token in-place: update fields on the managed entity instead of delete+insert
         String newAccessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
-        String newRefreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+        String newRefreshTokenValue = jwtUtils.generateRefreshToken(user.getEmail());
 
-        RefreshToken newStoredToken = RefreshToken.builder()
-                .token(newRefreshToken)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusDays(7))
-                .build();
-        refreshTokenRepository.save(newStoredToken);
+        storedToken.setToken(newRefreshTokenValue);
+        storedToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+        refreshTokenRepository.save(storedToken);
 
         return AuthResponse.builder()
                 .token(newAccessToken)
-                .refreshToken(newRefreshToken)
+                .refreshToken(newRefreshTokenValue)
                 .id(user.getId())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
