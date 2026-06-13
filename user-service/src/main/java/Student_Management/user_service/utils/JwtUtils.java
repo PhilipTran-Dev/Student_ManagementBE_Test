@@ -1,6 +1,6 @@
-package com.student.management.userservice.utils;
+package Student_Management.user_service.utils;
 
-import com.student.management.userservice.entity.Role;
+import Student_Management.user_service.entity.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -25,10 +25,11 @@ public class JwtUtils {
         this.refreshExpirationMs = refreshExpirationMs;
     }
 
-    public String generateAccessToken(String email, Role role) {
+    public String generateAccessToken(String email, Role role, Long userId) {
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role.name())
+                .claim("userId", userId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(jwtSecret)
@@ -51,6 +52,15 @@ public class JwtUtils {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public Long getUserIdFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(jwtSecret)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", Long.class);
     }
 
     public String getRoleFromToken(String token) {

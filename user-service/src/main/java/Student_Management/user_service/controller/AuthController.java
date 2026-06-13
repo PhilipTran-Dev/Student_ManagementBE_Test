@@ -1,9 +1,9 @@
-package com.student.management.userservice.controller;
+package Student_Management.user_service.controller;
 
-import com.student.management.userservice.dto.AuthResponse;
-import com.student.management.userservice.dto.LoginRequest;
-import com.student.management.userservice.dto.RegisterRequest;
-import com.student.management.userservice.service.AuthService;
+import Student_Management.user_service.dto.AuthResponse;
+import Student_Management.user_service.dto.LoginRequest;
+import Student_Management.user_service.dto.RegisterRequest;
+import Student_Management.user_service.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

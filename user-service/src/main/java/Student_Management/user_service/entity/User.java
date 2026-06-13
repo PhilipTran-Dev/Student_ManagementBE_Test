@@ -1,4 +1,4 @@
-package com.student.management.userservice.entity;
+package Student_Management.user_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,6 +38,27 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private UserStatus status;
+
+    @Column(name = "date_of_birth", length = 20)
+    private String dateOfBirth;
+
+    @Column(length = 20)
+    private String gender;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(name = "student_id", length = 50)
+    private String studentId;
+
+    @Column(length = 150)
+    private String faculty;
+
+    @Column(length = 150)
+    private String major;
+
+    @Column(name = "class_name", length = 50)
+    private String className;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

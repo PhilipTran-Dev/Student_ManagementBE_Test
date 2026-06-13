@@ -1,13 +1,16 @@
-package com.student.management.userservice.service;
+package Student_Management.user_service.service;
 
-import com.student.management.userservice.dto.AuthResponse;
-import com.student.management.userservice.dto.LoginRequest;
-import com.student.management.userservice.dto.RegisterRequest;
-import com.student.management.userservice.entity.*;
-import com.student.management.userservice.repository.OtpCodeRepository;
-import com.student.management.userservice.repository.RefreshTokenRepository;
-import com.student.management.userservice.repository.UserRepository;
-import com.student.management.userservice.utils.JwtUtils;
+import Student_Management.user_service.dto.AuthResponse;
+import Student_Management.user_service.dto.LoginRequest;
+import Student_Management.user_service.dto.RegisterRequest;
+import Student_Management.user_service.entity.OtpCode;
+import Student_Management.user_service.entity.RefreshToken;
+import Student_Management.user_service.entity.User;
+import Student_Management.user_service.entity.UserStatus;
+import Student_Management.user_service.repository.OtpCodeRepository;
+import Student_Management.user_service.repository.RefreshTokenRepository;
+import Student_Management.user_service.repository.UserRepository;
+import Student_Management.user_service.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,7 +42,7 @@ public class AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole());
+        String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
         String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
 
         // Save or update refresh token
@@ -75,10 +78,17 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .role(request.getRole())
                 .status(UserStatus.ACTIVE)
+                .dateOfBirth(request.getDateOfBirth())
+                .gender(request.getGender())
+                .phoneNumber(request.getPhoneNumber())
+                .studentId(request.getStudentId())
+                .faculty(request.getFaculty())
+                .major(request.getMajor())
+                .className(request.getClassName())
                 .build();
         user = userRepository.save(user);
 
-        String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole());
+        String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
         String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
 
         RefreshToken newRefreshToken = RefreshToken.builder()
@@ -113,7 +123,7 @@ public class AuthService {
         // Rotate tokens
         refreshTokenRepository.delete(storedToken);
 
-        String newAccessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole());
+        String newAccessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
         String newRefreshToken = jwtUtils.generateRefreshToken(user.getEmail());
 
         RefreshToken newStoredToken = RefreshToken.builder()

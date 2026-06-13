@@ -1,6 +1,6 @@
-package com.student.management.userservice.config;
+package Student_Management.user_service.config;
 
-import com.student.management.userservice.utils.JwtUtils;
+import Student_Management.user_service.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

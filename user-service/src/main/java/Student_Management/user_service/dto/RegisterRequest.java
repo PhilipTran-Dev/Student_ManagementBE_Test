@@ -1,6 +1,7 @@
-package com.student.management.userservice.dto;
+package Student_Management.user_service.dto;
 
-import com.student.management.userservice.entity.Role;
+import Student_Management.user_service.entity.Role;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,4 +28,19 @@ public class RegisterRequest {
 
     @NotNull(message = "Role is required")
     private Role role;
+
+    private String dateOfBirth;
+
+    private String gender;
+
+    private String phoneNumber;
+
+    private String studentId;
+
+    private String faculty;
+
+    private String major;
+
+    @JsonProperty("class")
+    private String className;
 }

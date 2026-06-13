@@ -1,4 +1,4 @@
-package com.student.management.userservice.entity;
+package Student_Management.user_service.entity;
 
 public enum Role {
     STUDENT,

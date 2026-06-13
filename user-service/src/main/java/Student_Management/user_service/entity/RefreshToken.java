@@ -1,4 +1,4 @@
-package com.student.management.userservice.entity;
+package Student_Management.user_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,27 +6,25 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "otp_codes")
+@Table(name = "refresh_tokens")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OtpCode {
+public class RefreshToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String email;
+    @Column(nullable = false, unique = true, length = 500)
+    private String token;
 
-    @Column(nullable = false, length = 10)
-    private String code;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
-
-    @Column(nullable = false, length = 50)
-    private String purpose;
 }

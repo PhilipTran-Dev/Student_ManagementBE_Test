@@ -1,6 +1,6 @@
-package com.student.management.userservice.dto;
+package Student_Management.user_service.dto;
 
-import com.student.management.userservice.entity.Role;
+import Student_Management.user_service.entity.Role;
 import lombok.*;
 
 @Getter
