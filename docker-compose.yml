@@ -17,7 +17,7 @@ services:
   user-service:
     build:
       context: ./user-service
-      dockerfile: Dockerfile
+      dockerfile: user-service/Dockerfile
     container_name: user-service-app
     ports:
       - "8081:8081"
