@@ -7,17 +7,15 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: 0917635632Mysql
-      MYSQL_DATABASE: user_service
+      MYSQL_ROOT_PASSWORD: "0917635632Mysql"
+      MYSQL_DATABASE: "user_service"
     volumes:
       - mysql_classroom_data:/var/lib/mysql
     networks:
       - classroom-network
 
   user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
+    image: phucngo249/user-service:latest
     container_name: user-service-app
     ports:
       - "8081:8081"
@@ -32,9 +30,7 @@ services:
       - classroom-network
 
   frontend:
-    build:
-      context: ../Student_ManagementFE - Copy/student_management_fe
-      dockerfile: Dockerfile
+    image: phucngo249/classroom-frontend:latest
     container_name: classroom-frontend-app
     ports:
       - "5173:80"

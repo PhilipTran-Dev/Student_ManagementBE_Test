@@ -1,4 +1,4 @@
-name: Backend CI (Build and Push User Service)
+name: Backend CI/CD (Build, Push and Deploy User Service)
 
 on:
   push:
@@ -9,11 +9,9 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -34,3 +32,16 @@ jobs:
             phucngo249/user-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository files to Runner workspace
+        uses: actions/checkout@v4
+
+      - name: Deploy via Docker Compose
+        run: |
+          docker compose pull user-service
+          docker compose up -d user-service
