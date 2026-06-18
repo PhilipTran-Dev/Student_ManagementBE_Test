@@ -4,6 +4,7 @@ services:
   mysql-db:
     image: mysql:8.0
     container_name: mysql-classroom
+    restart: always
     ports:
       - "3307:3306"
     environment:
@@ -17,6 +18,7 @@ services:
   user-service:
     image: phucngo249/user-service:latest
     container_name: user-service-app
+    restart: always
     ports:
       - "8081:8081"
     environment:
@@ -32,6 +34,7 @@ services:
   frontend:
     image: phucngo249/classroom-frontend:latest
     container_name: classroom-frontend-app
+    restart: always
     ports:
       - "5173:80"
     networks:
