@@ -19,8 +19,23 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    @PostMapping("/login/student")
+    public ResponseEntity<AuthResponse> loginStudent(@Valid @RequestBody LoginRequest request) {
+        request.setRole("STUDENT");
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login/teacher")
+    public ResponseEntity<AuthResponse> loginTeacher(@Valid @RequestBody LoginRequest request) {
+        request.setRole("TEACHER");
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login/admin")
+    public ResponseEntity<AuthResponse> loginAdmin(@Valid @RequestBody LoginRequest request) {
+        request.setRole("ADMIN");
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }

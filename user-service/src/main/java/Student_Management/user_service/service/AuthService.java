@@ -38,10 +38,10 @@ public class AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        // Enforce role cross-checking: the portal role from the frontend must match the database role
+        // Enforce strict cross-role check: the portal role enforced by the endpoint must match the database role
         if (request.getRole() != null
                 && !request.getRole().equalsIgnoreCase(user.getRole().name())) {
-            throw new BadCredentialsException("Unauthorized role access for this portal.");
+            throw new BadCredentialsException("Access Denied: Invalid portal access permission.");
         }
 
         String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
