@@ -3,11 +3,9 @@ package Student_Management.user_service.service;
 import Student_Management.user_service.dto.AuthResponse;
 import Student_Management.user_service.dto.LoginRequest;
 import Student_Management.user_service.dto.RegisterRequest;
-import Student_Management.user_service.entity.OtpCode;
 import Student_Management.user_service.entity.RefreshToken;
 import Student_Management.user_service.entity.User;
 import Student_Management.user_service.entity.UserStatus;
-import Student_Management.user_service.repository.OtpCodeRepository;
 import Student_Management.user_service.repository.RefreshTokenRepository;
 import Student_Management.user_service.repository.UserRepository;
 import Student_Management.user_service.utils.JwtUtils;
@@ -25,7 +23,6 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final OtpCodeRepository otpCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
@@ -38,7 +35,7 @@ public class AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        // Enforce strict cross-role check: the portal role enforced by the endpoint must match the database role
+        // Cross-portal validation: the endpoint-enforced role must match the user's database role
         if (request.getRole() != null
                 && !request.getRole().equalsIgnoreCase(user.getRole().name())) {
             throw new IllegalArgumentException("Your account does not have access permissions for this portal.");
@@ -90,7 +87,6 @@ public class AuthService {
         String accessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
         String newRefreshTokenValue = jwtUtils.generateRefreshToken(user.getEmail());
 
-        // No prior token exists for a brand-new user, so always create
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(newRefreshTokenValue)
                 .user(user)
@@ -120,7 +116,6 @@ public class AuthService {
 
         User user = storedToken.getUser();
 
-        // Rotate token in-place: update fields on the managed entity instead of delete+insert
         String newAccessToken = jwtUtils.generateAccessToken(user.getEmail(), user.getRole(), user.getId());
         String newRefreshTokenValue = jwtUtils.generateRefreshToken(user.getEmail());
 
@@ -136,39 +131,5 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole())
                 .build();
-    }
-
-    public void forgotPassword(String email) {
-        // Basic placeholder implementation
-        // Generates and stores an OTP for password reset
-        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
-
-        OtpCode otpCode = OtpCode.builder()
-                .email(email)
-                .code(otp)
-                .expiryDate(LocalDateTime.now().plusMinutes(15))
-                .purpose("FORGOT_PASSWORD")
-                .build();
-        otpCodeRepository.save(otpCode);
-
-        // In a real implementation, send OTP via email here
-    }
-
-    public boolean verifyOtp(String email, String otp) {
-        return otpCodeRepository.findByEmailAndCodeAndPurpose(email, otp, "FORGOT_PASSWORD")
-                .map(code -> code.getExpiryDate().isAfter(LocalDateTime.now()))
-                .orElse(false);
-    }
-
-    @Transactional
-    public void resetPassword(String email, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        // Invalidate all refresh tokens for security
-        refreshTokenRepository.deleteByUser(user);
     }
 }

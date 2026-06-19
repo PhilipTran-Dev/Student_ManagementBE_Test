@@ -19,33 +19,38 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/login/student")
+    // Student endpoints
+    @PostMapping("/student/register")
+    public ResponseEntity<AuthResponse> registerStudent(@Valid @RequestBody RegisterRequest request) {
+        request.setRole(Student_Management.user_service.entity.Role.STUDENT);
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/student/login")
     public ResponseEntity<AuthResponse> loginStudent(@Valid @RequestBody LoginRequest request) {
         request.setRole("STUDENT");
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login/teacher")
+    // Teacher endpoints
+    @PostMapping("/teacher/login")
     public ResponseEntity<AuthResponse> loginTeacher(@Valid @RequestBody LoginRequest request) {
         request.setRole("TEACHER");
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login/admin")
+    // Admin endpoints
+    @PostMapping("/admin/login")
     public ResponseEntity<AuthResponse> loginAdmin(@Valid @RequestBody LoginRequest request) {
         request.setRole("ADMIN");
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
+    // Shared endpoints
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
@@ -54,37 +59,5 @@ public class AuthController {
         }
         AuthResponse response = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        authService.forgotPassword(email);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/verify-otp")
-    public ResponseEntity<Map<String, Boolean>> verifyOtp(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String otp = request.get("otp");
-        if (email == null || otp == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        boolean isValid = authService.verifyOtp(email, otp);
-        return ResponseEntity.ok(Map.of("valid", isValid));
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String newPassword = request.get("newPassword");
-        if (email == null || newPassword == null || newPassword.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        authService.resetPassword(email, newPassword);
-        return ResponseEntity.ok().build();
     }
 }
