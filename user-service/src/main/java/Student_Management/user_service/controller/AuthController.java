@@ -100,10 +100,12 @@ public class AuthController {
             throw new BadCredentialsException("The entered OTP code is incorrect.");
         }
 
-        // successful
+        // successful: remove OTP and generate a reset token valid for a short time
         otpStorageService.removeOtp(request.getEmail());
+        String resetToken = otpStorageService.generateResetToken();
+        otpStorageService.storeResetToken(request.getEmail(), resetToken);
 
-        return ResponseEntity.ok(Map.of("message", "OTP verified successfully"));
+        return ResponseEntity.ok(Map.of("message", "OTP verified successfully!", "resetToken", resetToken));
     }
 
     /**
@@ -113,6 +115,16 @@ public class AuthController {
     @PostMapping("/student/reset-password")
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordWithEmailRequest request) {
         String normalized = request.getEmail().trim().toLowerCase();
+        // Validate reset token
+        var tokenDetails = otpStorageService.getResetTokenDetails(normalized);
+        if (tokenDetails == null || tokenDetails.getExpireAt() == null || tokenDetails.getExpireAt().isBefore(LocalDateTime.now())
+                || !tokenDetails.getToken().equals(request.getResetToken())) {
+            throw new IllegalArgumentException("Unauthorized password reset attempt. Token is invalid or expired.");
+        }
+
+        // token is valid -> remove it and update password
+        otpStorageService.removeResetToken(normalized);
+
         User user = userRepository.findByEmail(normalized)
                 .orElseThrow(() -> new IllegalArgumentException("Email address not found in system"));
 
@@ -123,6 +135,6 @@ public class AuthController {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+        return ResponseEntity.ok(Map.of("message", "Password has been successfully reset."));
     }
 }

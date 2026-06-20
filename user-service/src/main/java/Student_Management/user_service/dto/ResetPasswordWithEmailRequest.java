@@ -18,5 +18,8 @@ public class ResetPasswordWithEmailRequest {
     @NotBlank(message = "Temporary password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String newPassword;
+
+    @NotBlank(message = "Reset token is required")
+    private String resetToken;
 }
 
