@@ -17,6 +17,18 @@ public class UserController {
 
     private final UserService userService;
 
+    @GetMapping("/profile")
+    public ResponseEntity<ProfileResponse> getProfile() {
+        ProfileResponse profile = userService.getCurrentUserProfile();
+        return ResponseEntity.ok(profile);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<ProfileResponse> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+        ProfileResponse updated = userService.updateCurrentUserProfile(request);
+        return ResponseEntity.ok(updated);
+    }
+
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers(
             @RequestParam(required = false) String role) {

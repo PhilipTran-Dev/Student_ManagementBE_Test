@@ -1,6 +1,7 @@
 package Student_Management.user_service.dto;
 
 import Student_Management.user_service.entity.Role;
+import Student_Management.user_service.entity.UserStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +24,8 @@ public class UpdateUserRequest {
     @NotNull(message = "Role is required")
     private Role role;
 
+    private UserStatus status;
+
     private String dateOfBirth;
     private String gender;
     private String phoneNumber;
@@ -30,4 +33,7 @@ public class UpdateUserRequest {
     private String faculty;
     private String major;
     private String className;
+    private String avatarUrl;
+    private String teacherId;
+    private String password;
 }

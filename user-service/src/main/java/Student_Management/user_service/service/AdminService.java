@@ -51,6 +51,8 @@ public class AdminService {
                 .gender(request.getGender())
                 .phoneNumber(request.getPhoneNumber())
                 .faculty(request.getFaculty())
+                .avatarUrl(request.getAvatarUrl())
+                .teacherId(request.getTeacherId())
                 .build();
 
         if (request.getRole() == Role.TEACHER) {
@@ -80,10 +82,20 @@ public class AdminService {
         user.setEmail(request.getEmail());
         user.setFullName(request.getFullName());
         user.setRole(request.getRole());
+        if (request.getStatus() != null) {
+            user.setStatus(request.getStatus());
+        }
         user.setDateOfBirth(request.getDateOfBirth());
         user.setGender(request.getGender());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setFaculty(request.getFaculty());
+        user.setAvatarUrl(request.getAvatarUrl());
+        user.setTeacherId(request.getTeacherId());
+
+        // Password handling: only update if provided
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        }
 
         if (request.getRole() == Role.TEACHER) {
             user.setStudentId(null);
@@ -140,6 +152,8 @@ public class AdminService {
                 .faculty(user.getFaculty())
                 .major(user.getMajor())
                 .className(user.getClassName())
+                .avatarUrl(user.getAvatarUrl())
+                .teacherId(user.getTeacherId())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

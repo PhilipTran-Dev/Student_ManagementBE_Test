@@ -35,4 +35,6 @@ public class CreateUserRequest {
     private String faculty;
     private String major;
     private String className;
+    private String avatarUrl;
+    private String teacherId;
 }

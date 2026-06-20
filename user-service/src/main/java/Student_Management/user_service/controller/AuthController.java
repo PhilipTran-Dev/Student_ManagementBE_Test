@@ -74,6 +74,16 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        authService.logout(refreshToken);
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
+
     // ========== New endpoints for student OTP/password reset ==========
 
     /**

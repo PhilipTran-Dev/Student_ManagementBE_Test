@@ -60,6 +60,12 @@ public class User {
     @Column(name = "class_name", length = 50)
     private String className;
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
+    @Column(name = "teacher_id", length = 50)
+    private String teacherId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

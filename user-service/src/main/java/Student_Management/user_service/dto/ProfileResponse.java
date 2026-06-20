@@ -2,17 +2,18 @@ package Student_Management.user_service.dto;
 
 import Student_Management.user_service.entity.Role;
 import Student_Management.user_service.entity.UserStatus;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResponse {
-
+public class ProfileResponse {
     private Long id;
     private String email;
     private String fullName;
@@ -30,3 +31,4 @@ public class UserResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

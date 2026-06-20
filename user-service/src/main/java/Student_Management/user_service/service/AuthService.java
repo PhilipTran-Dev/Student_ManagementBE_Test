@@ -132,4 +132,10 @@ public class AuthService {
                 .role(user.getRole())
                 .build();
     }
+
+    @Transactional
+    public void logout(String refreshTokenValue) {
+        var stored = refreshTokenRepository.findByToken(refreshTokenValue);
+        stored.ifPresent(refreshTokenRepository::delete);
+    }
 }
