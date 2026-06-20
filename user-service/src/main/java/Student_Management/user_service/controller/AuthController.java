@@ -3,13 +3,22 @@ package Student_Management.user_service.controller;
 import Student_Management.user_service.dto.AuthResponse;
 import Student_Management.user_service.dto.LoginRequest;
 import Student_Management.user_service.dto.RegisterRequest;
+import Student_Management.user_service.dto.*;
+import Student_Management.user_service.entity.Role;
+import Student_Management.user_service.entity.User;
 import Student_Management.user_service.service.AuthService;
+import Student_Management.user_service.service.EmailOtpService;
+import Student_Management.user_service.service.EmailOtpStorageService;
+import Student_Management.user_service.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -18,11 +27,15 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailOtpService emailOtpService;
+    private final EmailOtpStorageService otpStorageService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // Student endpoints
     @PostMapping("/student/register")
     public ResponseEntity<AuthResponse> registerStudent(@Valid @RequestBody RegisterRequest request) {
-        request.setRole(Student_Management.user_service.entity.Role.STUDENT);
+        request.setRole(Role.STUDENT);
         AuthResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -59,5 +72,57 @@ public class AuthController {
         }
         AuthResponse response = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(response);
+    }
+
+    // ========== New endpoints for student OTP/password reset ==========
+
+    /**
+     * Initiate forgot password: send OTP if email exists and is a student.
+     * Payload: { "email": "student@example.com" }
+     */
+    @PostMapping("/student/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        emailOtpService.sendOtp(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "OTP dispatched successfully"));
+    }
+
+    /**
+     * Verify entered OTP.
+     * Payload: { "email": "...", "otp": "123456" }
+     */
+    @PostMapping("/student/verify-otp")
+    public ResponseEntity<Map<String, String>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        var details = otpStorageService.getOtpDetails(request.getEmail());
+        if (details == null || details.getExpireAt() == null || details.getExpireAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("OTP code has expired or is invalid.");
+        }
+        if (!details.getOtp().equals(request.getOtp())) {
+            throw new BadCredentialsException("The entered OTP code is incorrect.");
+        }
+
+        // successful
+        otpStorageService.removeOtp(request.getEmail());
+
+        return ResponseEntity.ok(Map.of("message", "OTP verified successfully"));
+    }
+
+    /**
+     * Reset password after verification.
+     * Payload: { "email": "...", "newPassword": "..." }
+     */
+    @PostMapping("/student/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordWithEmailRequest request) {
+        String normalized = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(normalized)
+                .orElseThrow(() -> new IllegalArgumentException("Email address not found in system"));
+
+        if (user.getRole() != Role.STUDENT) {
+            throw new IllegalArgumentException("Password reset endpoint is for students only");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 }
