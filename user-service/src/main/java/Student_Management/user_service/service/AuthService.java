@@ -11,6 +11,7 @@ import Student_Management.user_service.repository.UserRepository;
 import Student_Management.user_service.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid email or password");
+        }
+
+        if ("LOCKED".equalsIgnoreCase(user.getStatus().name())) {
+            throw new DisabledException("This account have been locked");
         }
 
         // Cross-portal validation: the endpoint-enforced role must match the user's database role

@@ -20,17 +20,18 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public List<UserResponse> getAllUsers(String roleFilter) {
-        List<User> users;
-
-        if (roleFilter != null && !roleFilter.isBlank()) {
-            Role role = Role.valueOf(roleFilter.toUpperCase());
-            users = userRepository.findByRole(role);
-        } else {
-            users = userRepository.findAll();
-        }
-
-        return users.stream()
+    public List<UserResponse> getAllUsers(String roleFilter, String search, String major, String className) {
+        return userRepository.findAll()
+                .stream()
+                .filter(user -> roleFilter == null || roleFilter.isBlank()
+                        || user.getRole() == Role.valueOf(roleFilter.toUpperCase()))
+                .filter(user -> className == null || className.isBlank()
+                        || (user.getClassName() != null && user.getClassName().equalsIgnoreCase(className)))
+                .filter(user -> major == null || major.isBlank()
+                        || (user.getMajor() != null && user.getMajor().equalsIgnoreCase(major)))
+                .filter(user -> search == null || search.isBlank()
+                        || (user.getFullName() != null && user.getFullName().toLowerCase().contains(search.toLowerCase()))
+                        || (user.getEmail() != null && user.getEmail().toLowerCase().contains(search.toLowerCase())))
                 .map(this::toUserResponse)
                 .toList();
     }
@@ -99,11 +100,6 @@ public class AdminService {
         // Apply trim sanitization BEFORE role-specific logic
         if (request.getFaculty() != null) user.setFaculty(request.getFaculty().trim());
         if (request.getMajor() != null) user.setMajor(request.getMajor().trim());
-
-        // Password handling: only update if provided
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
 
         if (request.getRole() == Role.TEACHER) {
             user.setStudentId(null);

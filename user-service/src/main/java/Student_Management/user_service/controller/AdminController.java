@@ -19,8 +19,11 @@ public class AdminController {
 
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> getAllUsers(
-            @RequestParam(required = false) String role) {
-        List<UserResponse> users = adminService.getAllUsers(role);
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String className) {
+        List<UserResponse> users = adminService.getAllUsers(role, search, major, className);
         return ResponseEntity.ok(users);
     }
 

@@ -53,6 +53,4 @@ public class UpdateUserRequest {
 
     @JsonProperty("teacher_id")
     private String teacherId;
-
-    private String password;
 }

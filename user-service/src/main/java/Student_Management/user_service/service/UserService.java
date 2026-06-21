@@ -146,10 +146,6 @@ public class UserService {
         user.setFaculty(request.getFaculty());
         user.setAvatarUrl(request.getAvatarUrl());
         user.setTeacherId(request.getTeacherId());
-
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
         user.setAvatarUrl(request.getAvatarUrl());
 
         // Clear student-exclusive fields if role is TEACHER
