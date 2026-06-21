@@ -55,13 +55,17 @@ public class AdminService {
                 .teacherId(request.getTeacherId())
                 .build();
 
+        // Trim faculty/major for consistent storage before applying role logic
+        if (request.getFaculty() != null) user.setFaculty(request.getFaculty().trim());
+        if (request.getMajor() != null) user.setMajor(request.getMajor().trim());
+
         if (request.getRole() == Role.TEACHER) {
             user.setStudentId(null);
             user.setMajor(null);
             user.setClassName(null);
         } else {
             user.setStudentId(request.getStudentId());
-            user.setMajor(request.getMajor());
+            // className is already mapped via @JsonProperty("class"), major/faculty already trimmed above
             user.setClassName(request.getClassName());
         }
 
@@ -92,6 +96,10 @@ public class AdminService {
         user.setAvatarUrl(request.getAvatarUrl());
         user.setTeacherId(request.getTeacherId());
 
+        // Apply trim sanitization BEFORE role-specific logic
+        if (request.getFaculty() != null) user.setFaculty(request.getFaculty().trim());
+        if (request.getMajor() != null) user.setMajor(request.getMajor().trim());
+
         // Password handling: only update if provided
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -99,11 +107,11 @@ public class AdminService {
 
         if (request.getRole() == Role.TEACHER) {
             user.setStudentId(null);
-            user.setMajor(null);
+            user.setMajor(null);   // major already trimmed before being nullified
             user.setClassName(null);
         } else {
             user.setStudentId(request.getStudentId());
-            user.setMajor(request.getMajor());
+            // major already trimmed above
             user.setClassName(request.getClassName());
         }
 
