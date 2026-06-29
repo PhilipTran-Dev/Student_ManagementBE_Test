@@ -10,6 +10,7 @@ import Student_Management.user_service.service.AuthService;
 import Student_Management.user_service.service.EmailOtpService;
 import Student_Management.user_service.service.EmailOtpStorageService;
 import Student_Management.user_service.repository.UserRepository;
+import Student_Management.user_service.utils.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ public class AuthController {
     private final EmailOtpStorageService otpStorageService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
     // Student endpoints
     @PostMapping("/student/register")
@@ -82,6 +84,35 @@ public class AuthController {
         }
         authService.logout(refreshToken);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
+
+    /**
+     * Inter-service token validation endpoint.
+     * Extracts the Bearer token from the Authorization header, validates it,
+     * and returns user identity details.
+     */
+    @GetMapping("/validate")
+    public ResponseEntity<Map<String, Object>> validateToken(
+            @RequestHeader("Authorization") String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new BadCredentialsException("Missing or invalid Authorization header");
+        }
+
+        String token = authorizationHeader.substring(7);
+
+        if (!jwtUtils.validateToken(token)) {
+            throw new BadCredentialsException("Token is expired or invalid");
+        }
+
+        Long userId = jwtUtils.getUserIdFromToken(token);
+        String email = jwtUtils.getEmailFromToken(token);
+        String role = jwtUtils.getRoleFromToken(token);
+
+        return ResponseEntity.ok(Map.of(
+                "user_id", userId,
+                "email", email,
+                "role", role
+        ));
     }
 
     // ========== New endpoints for student OTP/password reset ==========

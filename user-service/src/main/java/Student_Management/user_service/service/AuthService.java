@@ -54,7 +54,7 @@ public class AuthService {
                 .orElse(RefreshToken.builder().user(user).build());
 
         refreshToken.setToken(newRefreshTokenValue);
-        refreshToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+        refreshToken.setExpiryDate(LocalDateTime.now().plusDays(1));
         refreshTokenRepository.save(refreshToken);
 
         return AuthResponse.builder()
@@ -95,7 +95,7 @@ public class AuthService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(newRefreshTokenValue)
                 .user(user)
-                .expiryDate(LocalDateTime.now().plusDays(7))
+                .expiryDate(LocalDateTime.now().plusDays(1))
                 .build();
         refreshTokenRepository.save(refreshToken);
 
@@ -125,7 +125,7 @@ public class AuthService {
         String newRefreshTokenValue = jwtUtils.generateRefreshToken(user.getEmail());
 
         storedToken.setToken(newRefreshTokenValue);
-        storedToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+        storedToken.setExpiryDate(LocalDateTime.now().plusDays(1));
         refreshTokenRepository.save(storedToken);
 
         return AuthResponse.builder()
