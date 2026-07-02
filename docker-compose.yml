@@ -1,17 +1,18 @@
 version: '3.8'
 
 services:
-  mysql-db:
-    image: mysql:8.0
-    container_name: mysql-classroom
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres-classroom
     restart: always
     ports:
-      - "3307:3306"
+      - "5432:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: "0917635632Mysql"
-      MYSQL_DATABASE: "user_service"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "123"
+      POSTGRES_DB: user_service
     volumes:
-      - mysql_classroom_data:/var/lib/mysql
+      - postgres_classroom_data:/var/lib/postgresql/data
     networks:
       - classroom-network
 
@@ -22,13 +23,14 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - DB_HOST=mysql-db
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
       - DB_NAME=user_service
-      - DB_USER=root
-      - DB_PASSWORD=0917635632Mysql
+      - DB_USER=postgres
+      - DB_PASSWORD=123
       - CORS_ALLOWED_ORIGINS=http://192.168.66.133:5173
     depends_on:
-      - mysql-db
+      - postgres-db
     networks:
       - classroom-network
 
@@ -44,7 +46,7 @@ services:
       - user-service
 
 volumes:
-  mysql_classroom_data:
+  postgres_classroom_data:
 
 networks:
   classroom-network:
