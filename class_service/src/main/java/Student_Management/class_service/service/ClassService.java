@@ -73,6 +73,7 @@ public class ClassService {
                 .code(classroom.getCode())
                 .courseId(classroom.getCourseId())
                 .semesterId(classroom.getSemesterId())
+                .password(classroom.getPassword())
                 .teacherId(classroom.getTeacherId())
                 .createdAt(classroom.getCreatedAt())
                 .updatedAt(classroom.getUpdatedAt())
@@ -107,5 +108,24 @@ public class ClassService {
                     return response;
                 })
                 .toList();
+    }
+
+    //update password of class by classId, only teacher of this class can update password (this password is used for student to join class)
+    @Transactional
+    public ClassResponse updateClassPassword(Long classId, String password) {
+        UserPrincipal currentUser = (UserPrincipal) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        Class classroom = classRepository.findById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("Cannot find class with id: " + classId));
+
+        //only teacher of this class can update password
+        if (!classroom.getTeacherId().equals(currentUser.getId())) {
+            throw new IllegalStateException("Only the teacher of this class can update the password!");
+        }
+
+        classroom.setPassword(password);
+        Class updated = classRepository.save(classroom);
+        return convertToResponse(updated);
     }
 }

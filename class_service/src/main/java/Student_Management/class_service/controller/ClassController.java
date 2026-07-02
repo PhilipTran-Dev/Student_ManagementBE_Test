@@ -31,4 +31,14 @@ public class ClassController {
         List<ClassResponse> responses = classService.getTeacherClasses();
         return ResponseEntity.ok(responses);
     }
+
+    // update password of class by teacher
+    @PutMapping("/teacher/{classId}/password")
+    public ResponseEntity<ClassResponse> updateClassPassword(
+            @PathVariable Long classId,
+            @RequestBody java.util.Map<String, String> request) {
+        String password = request.get("password");
+        ClassResponse response = classService.updateClassPassword(classId, password);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -21,4 +21,5 @@ public class ClassResponse {
     private LocalDateTime updatedAt;
     private String teacherName;
     private String teacherEmail;
+    private String password;
 }
