@@ -2,6 +2,7 @@ package Student_Management.class_service.service;
 
 import Student_Management.class_service.dto.ClassRequest;
 import Student_Management.class_service.dto.ClassResponse;
+import Student_Management.class_service.dto.UserDto;
 import Student_Management.class_service.dto.UserPrincipal;
 import Student_Management.class_service.entity.Class;
 import Student_Management.class_service.entity.ClassMember;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ public class ClassService {
     private final ClassRepository classRepository;
     private final ClassMemberRepository classMemberRepository;
     private final ClassCodeGenerator classCodeGenerator;
+    private final WebClient userServiceWebClient;
 
     @Transactional
     public ClassResponse createClass(ClassRequest request) {
@@ -76,16 +79,33 @@ public class ClassService {
                 .build();
     }
 
+
     @Transactional(readOnly = true)
     public List<ClassResponse> getTeacherClasses() {
-        // automatically get the logged-in teacher's information from the JWT Token
         UserPrincipal currentUser = (UserPrincipal) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
 
-        // find classes in the DB by teacherId and map to ClassResponse
-        return classRepository.findByTeacherId(currentUser.getId())
+        Long teacherId = currentUser.getId();
+
+        //use webclient to call user-service to get teacher info in port 8081
+        UserDto teacherDto = userServiceWebClient.get()
+                .uri("/api/v1/teacher/" + teacherId) // call endpoint get teacher info by id
+                .retrieve()
+                .bodyToMono(UserDto.class)
+                .block(); // run blocking
+
+        String teacherName = (teacherDto != null) ? teacherDto.getFullName() : "Unknown Teacher";
+        String teacherEmail = (teacherDto != null) ? teacherDto.getEmail() : "N/A";
+
+        // take list class by teacherId from classRepository
+        return classRepository.findByTeacherId(teacherId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(classroom -> {
+                    ClassResponse response = convertToResponse(classroom);
+                    response.setTeacherName(teacherName);
+                    response.setTeacherEmail(teacherEmail);
+                    return response;
+                })
                 .toList();
     }
 }

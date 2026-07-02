@@ -19,4 +19,6 @@ public class ClassResponse {
     private Long teacherId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String teacherName;
+    private String teacherEmail;
 }
