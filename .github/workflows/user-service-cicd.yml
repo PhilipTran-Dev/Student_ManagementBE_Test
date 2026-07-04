@@ -1,4 +1,4 @@
-name: Backend CI/CD (Build, Push and Deploy User Service)
+name: Backend CI/CD (Build, Push and Deploy All Services)
 
 on:
   push:
@@ -22,14 +22,23 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push User Service
         uses: docker/build-push-action@v5
         with:
           context: ./user-service
           file: ./user-service/Dockerfile
           push: true
-          tags: |
-            phucngo249/user-service:latest
+          tags: phucngo249/user-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Class Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./class_service
+          file: ./class_service/Dockerfile
+          push: true
+          tags: phucngo249/class-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -43,5 +52,8 @@ jobs:
 
       - name: Deploy via Docker Compose
         run: |
-          docker compose pull user-service
-          docker compose up -d user-service
+          # Kéo toàn bộ các bản Image mới nhất của cả User và Class về máy ảo
+          docker compose pull
+          
+          # Khởi động lại toàn cụm để áp dụng cấu hình đồng bộ cùng lúc
+          docker compose up -d
