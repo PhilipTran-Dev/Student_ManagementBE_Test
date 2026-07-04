@@ -1,7 +1,9 @@
 package Student_Management.class_service.controller;
 
+import Student_Management.class_service.dto.ClassMemberResponse;
 import Student_Management.class_service.dto.ClassRequest;
 import Student_Management.class_service.dto.ClassResponse;
+import Student_Management.class_service.dto.JoinClassRequest;
 import Student_Management.class_service.service.ClassService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +42,24 @@ public class ClassController {
         String password = request.get("password");
         ClassResponse response = classService.updateClassPassword(classId, password);
         return ResponseEntity.ok(response);
+    }
+
+    // student join class by code and password, if password is null, then student can join class without password
+    @PostMapping("/student/join")
+    public ResponseEntity<Void> joinClass(@jakarta.validation.Valid @RequestBody JoinClassRequest request) {
+        classService.joinClass(request);
+        return ResponseEntity.ok().build();
+    }
+
+    // get all list of classes that student has joined to show on dashboard
+    @GetMapping("/student/all")
+    public ResponseEntity<List<ClassResponse>> getStudentClasses() {
+        return ResponseEntity.ok(classService.getStudentClasses());
+    }
+
+    // teacher get list of students that have joined the class (replace sample data)
+    @GetMapping("/teacher/{classId}/members")
+    public ResponseEntity<List<ClassMemberResponse>> getClassMembers(@PathVariable Long classId) {
+        return ResponseEntity.ok(classService.getClassMembers(classId));
     }
 }

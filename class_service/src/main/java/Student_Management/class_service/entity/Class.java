@@ -45,6 +45,6 @@ public class Class {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(length = 100)
+    @Column(length = 100, nullable = false)
     private String password; // password when student wanto to join class, optional, can be null
 }

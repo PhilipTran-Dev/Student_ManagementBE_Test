@@ -1,9 +1,6 @@
 package Student_Management.class_service.service;
 
-import Student_Management.class_service.dto.ClassRequest;
-import Student_Management.class_service.dto.ClassResponse;
-import Student_Management.class_service.dto.UserDto;
-import Student_Management.class_service.dto.UserPrincipal;
+import Student_Management.class_service.dto.*;
 import Student_Management.class_service.entity.Class;
 import Student_Management.class_service.entity.ClassMember;
 import Student_Management.class_service.entity.ClassMemberStatus;
@@ -127,5 +124,122 @@ public class ClassService {
         classroom.setPassword(password);
         Class updated = classRepository.save(classroom);
         return convertToResponse(updated);
+    }
+
+    // logic for student to join class by class code and password, if class code and password are correct, insert student into class_member table with ACTIVE status and STUDENT role
+    @Transactional
+    public void joinClass(JoinClassRequest request) {
+        UserPrincipal currentUser = (UserPrincipal) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        // find class by class code
+        Class classroom = classRepository.findByCode(request.getCode().toUpperCase().trim())
+                .orElseThrow(() -> new IllegalArgumentException("Class code is not exist!"));
+
+        // checking security password if teacher set password for this class
+        String classPassword = classroom.getPassword();
+        if (classPassword != null && !classPassword.isBlank()) {
+            if (request.getPassword() == null || !request.getPassword().equals(classPassword)) {
+                throw new IllegalArgumentException("This password is not correct!");
+            }
+        }
+
+        // check student has joined this class before, if yes, check status of this student in class_member table, if status is ACTIVE, throw exception, if status is INACTIVE, update status to ACTIVE
+        java.util.Optional<ClassMember> existingMember = classMemberRepository
+                .findByClassroomIdAndUserId(classroom, currentUser.getId());
+
+        if (existingMember.isPresent()) {
+            ClassMember member = existingMember.get();
+            if (member.getStatus() == ClassMemberStatus.ACTIVE) {
+                throw new IllegalStateException("You have joined this class before!");
+            } else {
+                // if status is INACTIVE, update status to ACTIVE
+                member.setStatus(ClassMemberStatus.ACTIVE);
+                classMemberRepository.save(member);
+            }
+        } else {
+            // create new ClassMember entity with STUDENT role and ACTIVE status
+            ClassMember newMember = ClassMember.builder()
+                    .classroom(classroom)
+                    .userId(currentUser.getId())
+                    .role("STUDENT")
+                    .status(ClassMemberStatus.ACTIVE)
+                    .build();
+            classMemberRepository.save(newMember);
+        }
+    }
+
+    // logic to get list of classes that student has joined, only return classes with ACTIVE status in class_member table
+    @Transactional(readOnly = true)
+    public List<ClassResponse> getStudentClasses() {
+        UserPrincipal currentUser = (UserPrincipal) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+
+        // find all ACTIVE class members with STUDENT role for current user
+        List<ClassMember> memberships = classMemberRepository.findByUserIdAndRoleAndStatus(
+                currentUser.getId(), "STUDENT", ClassMemberStatus.ACTIVE);
+
+        return memberships.stream()
+                .map(membership -> {
+                    Class classroom = membership.getClassroom();
+                    ClassResponse response = convertToResponse(classroom);
+
+                    // call inter-service synchronously to user-service to get teacher info by teacherId
+                    try {
+                        UserDto teacherDto = userServiceWebClient.get()
+                                .uri("/api/v1/teacher/" + classroom.getTeacherId())
+                                .retrieve()
+                                .bodyToMono(UserDto.class)
+                                .block();
+                        if (teacherDto != null) {
+                            response.setTeacherName(teacherDto.getFullName());
+                            response.setTeacherEmail(teacherDto.getEmail());
+                        }
+                    } catch (Exception e) {
+                        response.setTeacherName("Annonymous Teacher");
+                        response.setTeacherEmail("N/A");
+                    }
+                    return response;
+                })
+                .toList();
+    }
+
+    // get all list of students in a class by classId, only teacher of this class can get list of students, return list of StudentResponse with userId, fullName, email, status
+    @Transactional(readOnly = true)
+    public List<ClassMemberResponse> getClassMembers(Long classId) {
+        Class classroom = classRepository.findById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("cannot find class with id: " + classId));
+
+        // get all list members with ACTIVE status in class_member table by classId
+        List<ClassMember> activeMembers = classMemberRepository.findByClassroomIdAndStatus(classroom, ClassMemberStatus.ACTIVE);
+
+        // filter out teacher, only get members with STUDENT role
+        return activeMembers.stream()
+                .filter(m -> "STUDENT".equalsIgnoreCase(m.getRole()))
+                .map(member -> {
+                    ClassMemberResponse.ClassMemberResponseBuilder builder = ClassMemberResponse.builder()
+                            .userId(member.getUserId())
+                            .joinedAt(member.getJoinedAt());
+
+                    try {
+                        // call endpoint of user-service to get detailed information (studentId, fullName, className)
+                        StudentDetailDto studentDto = userServiceWebClient.get()
+                                .uri("/api/v1/student/" + member.getUserId())
+                                .retrieve()
+                                .bodyToMono(StudentDetailDto.class)
+                                .block();
+                        if (studentDto != null) {
+                            builder.fullName(studentDto.getFullName())
+                                    .email(studentDto.getEmail())
+                                    .studentId(studentDto.getStudentId())
+                                    .className(studentDto.getClassName());
+                        }
+                    } catch (Exception e) {
+                        builder.fullName("student name not found")
+                                .email("N/A");
+                    }
+                    return builder.build();
+                })
+                .toList();
     }
 }

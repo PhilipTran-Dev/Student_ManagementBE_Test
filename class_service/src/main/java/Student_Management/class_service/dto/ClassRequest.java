@@ -14,4 +14,6 @@ public class ClassRequest {
 
     @NotNull(message = "Semester's ID has not been blank")
     private Long semesterId;
+
+
 }
