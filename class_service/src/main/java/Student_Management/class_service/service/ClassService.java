@@ -146,7 +146,7 @@ public class ClassService {
 
         // check student has joined this class before, if yes, check status of this student in class_member table, if status is ACTIVE, throw exception, if status is INACTIVE, update status to ACTIVE
         java.util.Optional<ClassMember> existingMember = classMemberRepository
-                .findByClassroomIdAndUserId(classroom, currentUser.getId());
+                .findByClassroomAndUserId(classroom, currentUser.getId());
 
         if (existingMember.isPresent()) {
             ClassMember member = existingMember.get();
@@ -211,7 +211,8 @@ public class ClassService {
                 .orElseThrow(() -> new IllegalArgumentException("cannot find class with id: " + classId));
 
         // get all list members with ACTIVE status in class_member table by classId
-        List<ClassMember> activeMembers = classMemberRepository.findByClassroomIdAndStatus(classroom, ClassMemberStatus.ACTIVE);
+        List<ClassMember> activeMembers = classMemberRepository
+                .findByClassroomAndStatus(classroom, ClassMemberStatus.ACTIVE);
 
         // filter out teacher, only get members with STUDENT role
         return activeMembers.stream()

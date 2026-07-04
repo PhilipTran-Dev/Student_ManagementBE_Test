@@ -13,14 +13,11 @@ import java.util.Optional;
 public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> {
 
     //find history to know if they have ever joined this class, regardless of ACTIVE or LEFT
-    Optional<ClassMember> findByClassroomIdAndUserId(Class classroom, Long userId);
-
+    Optional<ClassMember> findByClassroomAndUserId(Class classroom, Long userId);
     //check user still active in class
-    boolean existsByClassroomIdAndUserIdAndStatus(Class classroom, Long userId, ClassMemberStatus status);
-
+    boolean existsByClassroomAndUserIdAndStatus(Class classroom, Long userId, ClassMemberStatus status);
     // take list of members who are currently ACTIVE in the class
-    List<ClassMember> findByClassroomIdAndStatus(Class classroom, ClassMemberStatus status);
-
+    List<ClassMember> findByClassroomAndStatus(Class classroom, ClassMemberStatus status);
     // take list of classes that student is currently ACTIVE in
     List<ClassMember> findByUserIdAndRoleAndStatus(Long userId, String role, ClassMemberStatus status);
 }
