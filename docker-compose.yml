@@ -92,7 +92,7 @@ services:
 
   frontend:
     image: phucngo249/classroom-frontend:latest
-    container_name: classroom-frontend-app
+#    container_name: classroom-frontend-app
     restart: always
     ports:
       - "5173:80"
