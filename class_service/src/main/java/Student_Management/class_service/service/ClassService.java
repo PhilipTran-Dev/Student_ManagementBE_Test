@@ -132,8 +132,9 @@ public class ClassService {
         UserPrincipal currentUser = (UserPrincipal) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
 
+        String inputCode = request.getCode() != null ? request.getCode().trim() : "";
         // find class by class code
-        Class classroom = classRepository.findByCode(request.getCode().toUpperCase().trim())
+        Class classroom = classRepository.findByCode(inputCode)
                 .orElseThrow(() -> new IllegalArgumentException("Class code is not exist!"));
 
         // checking security password if teacher set password for this class
