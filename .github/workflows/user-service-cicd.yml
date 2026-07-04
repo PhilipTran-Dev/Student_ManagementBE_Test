@@ -26,7 +26,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./user-service
-          file: ./user-service/Dockerfile
           push: true
           tags: phucngo249/user-service:latest
           cache-from: type=gha
@@ -36,7 +35,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./class_service
-          file: ./class_service/Dockerfile
           push: true
           tags: phucngo249/class-service:latest
           cache-from: type=gha
@@ -52,8 +50,5 @@ jobs:
 
       - name: Deploy via Docker Compose
         run: |
-          # Kéo toàn bộ các bản Image mới nhất của cả User và Class về máy ảo
           docker compose pull
-          
-          # Khởi động lại toàn cụm để áp dụng cấu hình đồng bộ cùng lúc
           docker compose up -d
