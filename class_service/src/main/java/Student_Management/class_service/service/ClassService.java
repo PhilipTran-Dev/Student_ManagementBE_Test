@@ -243,5 +243,33 @@ public class ClassService {
                     return builder.build();
                 })
                 .toList();
+
+    }
+
+    @Transactional(readOnly = true)
+    public ClassResponse getClassById(Long classId) {
+        // find class by id, if not found, throw exception
+        Class classroom = classRepository.findById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("Cannot find class with id: " + classId));
+
+        // change data to DTO format to return
+        ClassResponse response = convertToResponse(classroom);
+
+        // call background to user-service (port 8081) to get teacher name and email by teacherId
+        try {
+            UserDto teacherDto = userServiceWebClient.get()
+                    .uri("/api/v1/teacher/" + classroom.getTeacherId())
+                    .retrieve()
+                    .bodyToMono(UserDto.class)
+                    .block();
+            if (teacherDto != null) {
+                response.setTeacherName(teacherDto.getFullName());
+                response.setTeacherEmail(teacherDto.getEmail());
+            }
+        } catch (Exception e) {
+            response.setTeacherName("Unknown Instructor");
+            response.setTeacherEmail("N/A");
+        }
+        return response;
     }
 }

@@ -58,8 +58,13 @@ public class ClassController {
     }
 
     // teacher get list of students that have joined the class (replace sample data)
-    @GetMapping("/teacher/{classId}/members")
+    @GetMapping("/{classId}/members")
     public ResponseEntity<List<ClassMemberResponse>> getClassMembers(@PathVariable Long classId) {
         return ResponseEntity.ok(classService.getClassMembers(classId));
+    }
+
+    @GetMapping("/{classId}")
+    public ResponseEntity<ClassResponse> getClassById(@PathVariable Long classId) {
+        return ResponseEntity.ok(classService.getClassById(classId));
     }
 }
