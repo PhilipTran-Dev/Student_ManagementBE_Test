@@ -48,7 +48,7 @@ services:
       - classroom-network
 
   user-service:
-    image: phucngo249/user-service:latest
+    build: ./user-service
     container_name: user-service-app
     restart: always
     ports:
@@ -59,13 +59,14 @@ services:
       - DB_NAME=user_service
       - DB_USER=postgres
       - DB_PASSWORD=123
+      - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
     depends_on:
       - postgres-user-db
     networks:
       - classroom-network
 
   class-service:
-    image: phucngo249/class-service:latest
+    build: ./class_service
     container_name: class-service-app
     restart: always
     ports:
@@ -81,7 +82,7 @@ services:
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=classroom-materials
-      - APP_ALLOWED_ORIGINS=http://localhost:5173
+      - APP_ALLOWED_ORIGINS=http://localhost:5173,http://192.168.66.133:5173
       - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
     depends_on:
       - postgres-class-db
