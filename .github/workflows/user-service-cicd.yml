@@ -26,6 +26,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./user-service
+          file: ./user-service/Dockerfile
           push: true
           tags: phucngo249/user-service:latest
           cache-from: type=gha
@@ -35,6 +36,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./class_service
+          file: ./class_service/Dockerfile
           push: true
           tags: phucngo249/class-service:latest
           cache-from: type=gha
@@ -50,5 +52,8 @@ jobs:
 
       - name: Deploy via Docker Compose
         run: |
+          # pull entire newest updated images from compose file to VM
           docker compose pull
-          docker compose up -d
+          
+          # force system rebuild, remove old containers, and recreate new ones
+          docker compose up -d --force-recreate --remove-orphans
