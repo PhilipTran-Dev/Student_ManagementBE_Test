@@ -52,8 +52,5 @@ jobs:
 
       - name: Deploy via Docker Compose
         run: |
-          # pull entire newest updated images from compose file to VM
-          docker compose pull
-          
-          # force system rebuild, remove old containers, and recreate new ones
-          docker compose up -d --force-recreate --remove-orphans
+          docker compose pull user-service class-service
+          docker compose up -d --force-recreate user-service class-service
