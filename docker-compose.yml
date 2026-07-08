@@ -43,12 +43,18 @@ services:
       MINIO_ROOT_PASSWORD: supersecretpassword
     volumes:
       - minio_data:/data
-    command: server /data --console-address ":9001"
+    command: server /data --address ":9000" --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - classroom-network
 
   user-service:
     build: ./user-service
+    image: phucngo249/user-service:latest
     container_name: user-service-app
     restart: always
     ports:
@@ -67,6 +73,7 @@ services:
 
   class-service:
     build: ./class_service
+    image: phucngo249/class-service:latest
     container_name: class-service-app
     restart: always
     ports:
@@ -78,29 +85,19 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=123
       - USER_SERVICE_URL=http://user-service-app:8081
-      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ENDPOINT=http://minio-storage:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=classroom-materials
       - APP_ALLOWED_ORIGINS=http://localhost:5173,http://192.168.66.133:5173
       - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
     depends_on:
-      - postgres-class-db
-      - minio
+      postgres-class-db:
+        condition: service_started
+      minio:
+        condition: service_healthy
     networks:
       - classroom-network
-
-  frontend:
-    image: phucngo249/classroom-frontend:latest
-#    container_name: classroom-frontend-app
-    restart: always
-    ports:
-      - "5173:80"
-    networks:
-      - classroom-network
-    depends_on:
-      - user-service
-      - class-service
 
 volumes:
   postgres_user_data:
