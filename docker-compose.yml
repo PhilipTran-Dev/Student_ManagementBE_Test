@@ -44,11 +44,6 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --address ":9000" --console-address ":9001"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
       - classroom-network
 
@@ -95,7 +90,7 @@ services:
       postgres-class-db:
         condition: service_started
       minio:
-        condition: service_healthy
+        condition: service_started
     networks:
       - classroom-network
 

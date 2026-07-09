@@ -85,23 +85,32 @@ public class ClassService {
 
         Long teacherId = currentUser.getId();
 
-        //use webclient to call user-service to get teacher info in port 8081
-        UserDto teacherDto = userServiceWebClient.get()
-                .uri("/api/v1/teacher/" + teacherId) // call endpoint get teacher info by id
-                .retrieve()
-                .bodyToMono(UserDto.class)
-                .block(); // run blocking
+        String teacherName = "Unknown Teacher";
+        String teacherEmail = "N/A";
 
-        String teacherName = (teacherDto != null) ? teacherDto.getFullName() : "Unknown Teacher";
-        String teacherEmail = (teacherDto != null) ? teacherDto.getEmail() : "N/A";
+        try {
+            UserDto teacherDto = userServiceWebClient.get()
+                    .uri("/api/v1/teacher/" + teacherId)
+                    .retrieve()
+                    .bodyToMono(UserDto.class)
+                    .block();
 
-        // take list class by teacherId from classRepository
+            if (teacherDto != null) {
+                teacherName = teacherDto.getFullName();
+                teacherEmail = teacherDto.getEmail();
+            }
+        } catch (Exception e) {
+        }
+
+        String finalTeacherName = teacherName;
+        String finalTeacherEmail = teacherEmail;
+
         return classRepository.findByTeacherId(teacherId)
                 .stream()
                 .map(classroom -> {
                     ClassResponse response = convertToResponse(classroom);
-                    response.setTeacherName(teacherName);
-                    response.setTeacherEmail(teacherEmail);
+                    response.setTeacherName(finalTeacherName);
+                    response.setTeacherEmail(finalTeacherEmail);
                     return response;
                 })
                 .toList();

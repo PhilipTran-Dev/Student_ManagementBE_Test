@@ -19,25 +19,11 @@ public class MinIOConfig {
     @Value("${app.minio.secret-key}")
     private String secretKey;
 
-    @Value("${app.minio.bucket}")
-    private String bucket;
-
     @Bean
     public MinioClient minioClient() {
-        try {
-            MinioClient client = MinioClient.builder()
-                    .endpoint(endpoint)
-                    .credentials(accessKey, secretKey)
-                    .build();
-
-            //auto check and create bucket if not exists
-            boolean exists = client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
-            if (!exists) {
-                client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
-            }
-            return client;
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot initialization MinIO config", e);
-        }
+        return MinioClient.builder()
+                .endpoint(endpoint)
+                .credentials(accessKey, secretKey)
+                .build();
     }
 }

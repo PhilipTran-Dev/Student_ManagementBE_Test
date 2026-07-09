@@ -42,11 +42,15 @@ public class MaterialService {
             throw new IllegalStateException("only the teacher of this class can upload materials");
         }
 
-        //create a random UUID for the file name to avoid name collisions
         String fileId = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         try {
-            // push binary file to Object Storage MinIO system
+            // [ĐÃ SỬA] Chuyển logic kiểm tra bucket vào đây để an toàn khởi động
+            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            if (!exists) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            }
+
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
@@ -56,7 +60,6 @@ public class MaterialService {
                             .build()
             );
 
-            // save Metadata info to Postgres database
             ClassFile classFile = ClassFile.builder()
                     .classroom(classroom)
                     .fileId(fileId)
@@ -90,7 +93,6 @@ public class MaterialService {
                 .orElseThrow(() -> new IllegalArgumentException("data is not exist with id: " + fileId));
 
         try {
-            //create link to download file from Object Storage MinIO system
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
@@ -117,17 +119,13 @@ public class MaterialService {
         }
 
         try {
-            //delete file from Object Storage MinIO system
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(bucket)
                             .object(classFile.getFileId())
                             .build()
             );
-
-            //delete metadata info from Postgres database
             classFileRepository.delete(classFile);
-
         } catch (Exception e) {
             throw new RuntimeException("error when delete file", e);
         }

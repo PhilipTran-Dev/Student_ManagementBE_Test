@@ -53,18 +53,25 @@ public class AnnouncementService {
         Class classroom = classRepository.findById(classId)
                 .orElseThrow(() -> new IllegalArgumentException("cannot find class with id: " + classId));
 
-        // call synchronously via WebClient to user-service to get teacher name
-        UserDto teacherDto = userServiceWebClient.get()
-                .uri("/api/v1/teacher/" + classroom.getTeacherId())
-                .retrieve()
-                .bodyToMono(UserDto.class)
-                .block();
+        String authorName = "Teacher";
 
-        String authorName = (teacherDto != null) ? teacherDto.getFullName() : "Teacher";
+        try {
+            UserDto teacherDto = userServiceWebClient.get()
+                    .uri("/api/v1/teacher/" + classroom.getTeacherId())
+                    .retrieve()
+                    .bodyToMono(UserDto.class)
+                    .block();
+            if (teacherDto != null && teacherDto.getFullName() != null) {
+                authorName = teacherDto.getFullName();
+            }
+        } catch (Exception e) {
+        }
+
+        String finalAuthorName = authorName;
 
         return announcementRepository.findByClassroomOrderByCreatedAtDesc(classroom)
                 .stream()
-                .map(announcement -> convertToResponse(announcement, authorName))
+                .map(announcement -> convertToResponse(announcement, finalAuthorName))
                 .toList();
     }
 
