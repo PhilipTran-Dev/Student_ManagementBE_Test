@@ -40,3 +40,8 @@ app:
     secret: ${APP_JWT_SECRET:3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b}
     expiration-ms: 86400000
     refresh-expiration-ms: 604800000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
