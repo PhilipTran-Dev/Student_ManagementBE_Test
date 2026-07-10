@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  discovery-service:
+    build: ./discovery_service
+    image: phucngo249/discovery-service:latest
+    container_name: discovery-service-app
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - classroom-network
+
   postgres-user-db:
     image: postgres:15-alpine
     container_name: postgres-user-container
@@ -61,8 +71,10 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=123
       - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
+      - EUREKA_URL=http://discovery-service-app:8761/eureka/
     depends_on:
       - postgres-user-db
+      - discovery-service
     networks:
       - classroom-network
 
@@ -79,17 +91,20 @@ services:
       - DB_NAME=class_service
       - DB_USER=postgres
       - DB_PASSWORD=123
-      - USER_SERVICE_URL=http://user-service-app:8081
       - MINIO_ENDPOINT=http://minio-storage:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=classroom-materials
       - APP_ALLOWED_ORIGINS=http://localhost:5173,http://192.168.66.133:5173
       - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
+      - USER_SERVICE_URL=http://user-service
+      - EUREKA_URL=http://discovery-service-app:8761/eureka/
     depends_on:
       postgres-class-db:
         condition: service_started
       minio:
+        condition: service_started
+      discovery-service:
         condition: service_started
     networks:
       - classroom-network

@@ -28,7 +28,7 @@ app:
 
   services:
     user-service:
-      url: ${USER_SERVICE_URL:http://localhost:8081}
+      url: ${USER_SERVICE_URL:http://user-service}
 
   minio:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
