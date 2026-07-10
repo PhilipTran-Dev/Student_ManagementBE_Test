@@ -1,8 +1,8 @@
-version: '3.8'
-
 services:
   discovery-service:
-    build: ./discovery_service
+    build:
+      context: .
+      dockerfile: discovery_service/Dockerfile
     image: phucngo249/discovery-service:latest
     container_name: discovery-service-app
     restart: always
@@ -58,7 +58,9 @@ services:
       - classroom-network
 
   user-service:
-    build: ./user-service
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
     image: phucngo249/user-service:latest
     container_name: user-service-app
     restart: always
@@ -79,7 +81,9 @@ services:
       - classroom-network
 
   class-service:
-    build: ./class_service
+    build:
+      context: .
+      dockerfile: class_service/Dockerfile
     image: phucngo249/class-service:latest
     container_name: class-service-app
     restart: always

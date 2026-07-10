@@ -3,12 +3,12 @@ WORKDIR /app
 
 COPY . .
 
-RUN mvn clean package -pl class_service -am -DskipTests
+RUN mvn clean package -pl discovery_service -am -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-COPY --from=build /app/class_service/target/*.jar app.jar
+COPY --from=build /app/discovery_service/target/*.jar app.jar
 
-EXPOSE 8082
+EXPOSE 8761
 ENTRYPOINT ["java", "-jar", "app.jar"]
