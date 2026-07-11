@@ -37,11 +37,12 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/courses/**").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/semesters/**").authenticated()
 
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/classes/{classId}").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/classes/{classId}/members").authenticated()
-
-                        // security barrier for each role
                         .requestMatchers("/api/v1/classes/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/api/v1/classes/student/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
