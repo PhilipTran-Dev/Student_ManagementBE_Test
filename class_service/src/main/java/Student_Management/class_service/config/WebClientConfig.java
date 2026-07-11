@@ -24,8 +24,8 @@ public class WebClientConfig {
     }
 
     @Bean
-    public WebClient userServiceWebClient() {
-        return WebClient.builder()
+    public WebClient userServiceWebClient(WebClient.Builder loadBalancedWebClientBuilder) {
+        return loadBalancedWebClientBuilder
                 .baseUrl(userServiceUrl)
                 .filter(bearerTokenFilter()) // auto spread token
                 .build();

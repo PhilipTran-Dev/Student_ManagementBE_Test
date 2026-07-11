@@ -89,19 +89,21 @@ services:
     restart: always
     ports:
       - "8082:8082"
+    extra_hosts:
+      - "localhost:host-gateway"
     environment:
       - DB_HOST=postgres-class-db
       - DB_PORT=5432
       - DB_NAME=class_service
       - DB_USER=postgres
       - DB_PASSWORD=123
-      - MINIO_ENDPOINT=http://minio-storage:9000
+      - MINIO_ENDPOINT=http://localhost:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=classroom-materials
       - APP_ALLOWED_ORIGINS=http://localhost:5173,http://192.168.66.133:5173
       - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
-      - USER_SERVICE_URL=http://user-service
+      - USER_SERVICE_URL=http://user-service:8081
       - EUREKA_URL=http://discovery-service-app:8761/eureka/
     depends_on:
       postgres-class-db:
