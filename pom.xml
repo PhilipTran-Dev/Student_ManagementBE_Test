@@ -29,6 +29,7 @@
         <module>user-service</module>
         <module>class_service</module>
         <module>discovery_service</module>
+        <module>assignment_service</module>
     </modules>
 
     <dependencyManagement>

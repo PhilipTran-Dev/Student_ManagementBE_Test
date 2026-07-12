@@ -41,6 +41,21 @@ services:
     networks:
       - classroom-network
 
+  postgres-assignment-db:
+    image: postgres:15-alpine
+    container_name: postgres-assignment-container
+    restart: always
+    ports:
+      - "5436:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=assignment_service
+    volumes:
+      - postgres_assignment_data:/var/lib/postgresql/data
+    networks:
+      - classroom-network
+
   minio:
     image: minio/minio:latest
     container_name: minio-storage
@@ -115,9 +130,46 @@ services:
     networks:
       - classroom-network
 
+  assignment-service:
+    build:
+      context: .
+      dockerfile: assignment_service/Dockerfile
+    image: phucngo249/assignment-service:latest
+    container_name: assignment-service-app
+    restart: always
+    ports:
+      - "8083:8083"
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      - DB_HOST=postgres-assignment-db
+      - DB_PORT=5432
+      - DB_NAME=assignment_service
+      - DB_USER=postgres
+      - DB_PASSWORD=123
+      - MINIO_ENDPOINT=http://localhost:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=supersecretpassword
+      - MINIO_BUCKET=assignment-materials
+      - APP_ALLOWED_ORIGINS=http://localhost:5173,http://192.168.66.133:5173
+      - APP_JWT_SECRET=3c963655447b567565b90214e9f7f0bc62e1e07b7134017326dfbf0800b6ed5b
+      - USER_SERVICE_URL=http://user-service:8081
+      - CLASS_SERVICE_URL=http://class-service:8082
+      - EUREKA_URL=http://discovery-service-app:8761/eureka/
+    depends_on:
+      postgres-assignment-db:
+        condition: service_started
+      minio:
+        condition: service_started
+      discovery-service:
+        condition: service_started
+    networks:
+      - classroom-network
+
 volumes:
   postgres_user_data:
   postgres_class_data:
+  postgres_assignment_data:
   minio_data:
 
 networks:
