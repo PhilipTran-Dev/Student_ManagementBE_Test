@@ -11,6 +11,7 @@ public class TeacherSubmissionView {
     private Long studentId;
     private String studentName;
     private String studentCode; // student code from the user service
+    private String className;
     private Long submissionId; // null if not submitted
     private List<String> fileUrls;
     private LocalDateTime submittedAt;

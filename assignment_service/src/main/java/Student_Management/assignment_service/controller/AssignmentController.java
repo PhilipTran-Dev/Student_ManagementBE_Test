@@ -58,12 +58,51 @@ public class AssignmentController {
         return ResponseEntity.ok(assignmentService.updateAssignment(id, request, files));
     }
 
+    @GetMapping("/teacher/download-url")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<java.util.Map<String, String>> getPresignedUrl(@RequestParam("objectName") String objectName) {
+        String url = assignmentService.generateDownloadUrl(objectName);
+        return ResponseEntity.ok(java.util.Map.of("url", url));
+    }
+
+    @DeleteMapping("/teacher/{id}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
+        assignmentService.deleteAssignment(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/teacher/{assignmentId}/file/{fileName}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<Void> deleteFile(@PathVariable Long assignmentId, @PathVariable String fileName) {
+        assignmentService.deleteFileFromAssignment(assignmentId, fileName);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/teacher/class/{classId}/gradebook")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<GradebookResponse> getClassGradebook(@PathVariable Long classId) {
+        return ResponseEntity.ok(assignmentService.getClassGradebook(classId));
+    }
+
     // ----- STUDENT API -----
 
     @GetMapping("/student/class/{classId}")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<StudentAssignmentResponse>> getStudentAssignments(@PathVariable Long classId) {
         return ResponseEntity.ok(assignmentService.getStudentAssignments(classId));
+    }
+    @GetMapping("/student/dashboard-stats")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<StudentStatsResponse> getStudentStats() {
+        return ResponseEntity.ok(assignmentService.getStudentStats());
+    }
+
+    @GetMapping("/student/download-url")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<java.util.Map<String, String>> getStudentPresignedUrl(@RequestParam("objectName") String objectName) {
+        String url = assignmentService.generateDownloadUrl(objectName);
+        return ResponseEntity.ok(java.util.Map.of("url", url));
     }
 
 }

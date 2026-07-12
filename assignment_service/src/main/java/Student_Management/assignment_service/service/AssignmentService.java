@@ -4,10 +4,11 @@ import Student_Management.assignment_service.dto.*;
 import Student_Management.assignment_service.entity.*;
 import Student_Management.assignment_service.repository.AssignmentRepository;
 import Student_Management.assignment_service.repository.SubmissionRepository;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
+import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -170,12 +170,18 @@ public class AssignmentService {
                 .feedback(submission != null ? submission.getFeedback() : null)
                 .submittedAt(submission != null ? submission.getSubmittedAt() : null)
                 .submissionStatus(submission != null ? submission.getStatus().name() : null)
+                .submittedFiles(submission != null ? submission.getFileUrls() : java.util.Collections.emptyList())
                 .build();
     }
 
     private List<String> uploadFilesToMinio(List<MultipartFile> files) {
         List<String> fileNames = new ArrayList<>();
         try {
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            }
+
             for (MultipartFile file : files) {
                 String fileId = UUID.randomUUID() + "_" + file.getOriginalFilename();
                 minioClient.putObject(PutObjectArgs.builder()
@@ -185,7 +191,8 @@ public class AssignmentService {
                 fileNames.add(fileId);
             }
         } catch (Exception e) {
-            throw new RuntimeException("MinIO Upload Failed", e);
+            e.printStackTrace();
+            throw new RuntimeException("MinIO Upload Failed: " + e.getMessage(), e);
         }
         return fileNames;
     }
@@ -195,11 +202,153 @@ public class AssignmentService {
         return user.getId();
     }
 
+    @Transactional(readOnly = true)
+    public String generateDownloadUrl(String objectName) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucket)
+                            .object(objectName)
+                            .expiry(15, TimeUnit.MINUTES)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Error when generating preview/download link from MinIO", e);
+        }
+    }
+
+    @Transactional
+    public void deleteAssignment(Long id) {
+        Assignment assignment = assignmentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));
+
+        if (assignment.getAttachments() != null) {
+            for (String fileId : assignment.getAttachments()) {
+                try {
+                    minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(fileId).build());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        assignmentRepository.delete(assignment);
+    }
+
+    @Transactional
+    public void deleteFileFromAssignment(Long assignmentId, String fileName) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));
+
+        try {
+            minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(fileName).build());
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting file from MinIO", e);
+        }
+
+        // delete the file from the list of attachments
+        List<String> files = assignment.getAttachments();
+        if (files != null) {
+            files.remove(fileName);
+            assignment.setAttachments(files);
+            assignmentRepository.save(assignment);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public GradebookResponse getClassGradebook(Long classId) {
+        List<ClassMemberResponse> classMembers = classServiceWebClient.get()
+                .uri("/api/v1/classes/{classId}/members", classId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<ClassMemberResponse>>() {})
+                .block();
+
+        if (classMembers == null) classMembers = Collections.emptyList();
+
+        List<Assignment> assignments = assignmentRepository.findByClassIdOrderByDeadlineDesc(classId);
+
+        List<GradebookAssignmentInfo> assignmentInfos = assignments.stream()
+                .map(a -> GradebookAssignmentInfo.builder()
+                        .id(a.getId())
+                        .title(a.getTitle())
+                        .maxMark(a.getMaxMark())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<GradebookStudentRow> studentRows = new ArrayList<>();
+
+        for (ClassMemberResponse member : classMembers) {
+            Map<Long, Double> studentGradeMap = new java.util.HashMap<>();
+
+            for (Assignment assignment : assignments) {
+                Submission submission = submissionRepository
+                        .findByAssignmentAndStudentId(assignment, member.getUserId())
+                        .orElse(null);
+
+                studentGradeMap.put(assignment.getId(), submission != null ? submission.getGrade() : null);
+            }
+
+            studentRows.add(GradebookStudentRow.builder()
+                    .studentId(member.getUserId())
+                    .studentName(member.getFullName())
+                    .studentCode(member.getStudentId())
+                    .grades(studentGradeMap)
+                    .build());
+        }
+
+        return GradebookResponse.builder()
+                .assignments(assignmentInfos)
+                .studentRows(studentRows)
+                .build();
+    }
+
     private void verifyTeacherAccess(Long classId, Long teacherId) {
         // Giả lập hoặc gọi sang class-service qua WebClient
     }
 
     private void verifyStudentAccess(Long classId, Long studentId) {
         // Giả lập hoặc gọi sang class-service qua WebClient
+    }
+
+    // ----- STUDENT LOGIC -----:
+    @Transactional(readOnly = true)
+    public StudentStatsResponse getStudentStats() {
+        Long studentId = getUserIdFromContext();
+
+        List<Submission> submissions = submissionRepository.findByStudentId(studentId);
+
+        long gradedCount = submissions.stream().filter(s -> s.getGrade() != null).count();
+        long pendingCount = submissions.stream().filter(s -> s.getGrade() == null).count();
+
+        double totalPercentage = 0.0;
+        for (Submission s : submissions) {
+            if (s.getGrade() != null) {
+                double max = s.getAssignment().getMaxMark();
+                if (max > 0) {
+                    totalPercentage += (s.getGrade() / max) * 100;
+                }
+            }
+        }
+
+        double avgPercentage = gradedCount > 0 ? totalPercentage / gradedCount : 0.0;
+        double gpa4 = (avgPercentage / 100) * 4.0;
+
+        gpa4 = Math.round(gpa4 * 100.0) / 100.0;
+        avgPercentage = Math.round(avgPercentage * 100.0) / 100.0;
+
+        String standing = "Good";
+        if (gpa4 < 2.0 && gradedCount > 0) {
+            standing = "Probation";
+        } else if (gpa4 >= 3.6) {
+            standing = "Excellent";
+        }
+
+        return StudentStatsResponse.builder()
+                .currentGpa(gpa4)
+                .gpaPercentage(avgPercentage)
+                .gradedTasks(gradedCount)
+                .pendingTasks(pendingCount)
+                .academicStanding(standing)
+                .build();
     }
 }

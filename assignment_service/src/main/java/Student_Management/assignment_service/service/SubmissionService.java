@@ -40,6 +40,11 @@ public class SubmissionService {
 
         List<String> uploadedFiles = new ArrayList<>();
         try {
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            }
+
             for (MultipartFile file : files) {
                 String fileId = "submissions/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
                 minioClient.putObject(PutObjectArgs.builder()
@@ -49,7 +54,8 @@ public class SubmissionService {
                 uploadedFiles.add(fileId);
             }
         } catch (Exception e) {
-            throw new RuntimeException("File storage failure", e);
+            e.printStackTrace();
+            throw new RuntimeException("File storage failure: " + e.getMessage(), e);
         }
 
         SubmissionStatus status = LocalDateTime.now().isAfter(assignment.getDeadline())
@@ -133,6 +139,7 @@ public class SubmissionService {
                     .fileUrls(sub != null ? sub.getFileUrls() : null)
                     .submittedAt(sub != null ? sub.getSubmittedAt() : null)
                     .status(calculatedStatus)
+                    .className(member.getClassName())
                     .grade(sub != null ? sub.getGrade() : null)
                     .feedback(sub != null ? sub.getFeedback() : null)
                     .build());

@@ -15,7 +15,7 @@ public class StudentAssignmentResponse {
     private LocalDateTime deadline;
     private Double maxMark;
     private List<String> attachments;
-
+    private List<String> submittedFiles;
     // Dynamic Fields
     private AssignmentState state; // TODO, DONE, MISSING
     private Double earnedGrade;
