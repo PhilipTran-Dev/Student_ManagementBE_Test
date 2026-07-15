@@ -35,9 +35,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=class_service
-    volumes:
-      - postgres_class_data:/var/lib/postgresql/data
+      - POST=postgres_class_data:/var/lib/postgresql/data
     networks:
       - classroom-network
 
@@ -170,4 +168,5 @@ volumes:
 
 networks:
   classroom-network:
+    name: classroom-network
     driver: bridge
