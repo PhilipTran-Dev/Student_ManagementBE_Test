@@ -22,10 +22,20 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Build and push Discovery Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./discovery_service/Dockerfile
+          push: true
+          tags: phucngo249/discovery-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Build and push User Service
         uses: docker/build-push-action@v5
         with:
-          context: ./user-service
+          context: .
           file: ./user-service/Dockerfile
           push: true
           tags: phucngo249/user-service:latest
@@ -35,10 +45,20 @@ jobs:
       - name: Build and push Class Service
         uses: docker/build-push-action@v5
         with:
-          context: ./class_service
+          context: .
           file: ./class_service/Dockerfile
           push: true
           tags: phucngo249/class-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Assignment Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./assignment_service/Dockerfile
+          push: true
+          tags: phucngo249/assignment-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -52,5 +72,7 @@ jobs:
 
       - name: Deploy via Docker Compose
         run: |
-          docker compose pull user-service class-service
-          docker compose up -d --force-recreate user-service class-service
+          # Pull toàn bộ image mới cấu hình trong file compose
+          docker compose pull
+          # Ép recreate lại toàn bộ các service để đồng bộ mã nguồn mới
+          docker compose up -d --force-recreate

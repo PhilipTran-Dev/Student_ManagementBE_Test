@@ -37,6 +37,8 @@ app:
     bucket: ${MINIO_BUCKET:classroom-materials}
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
