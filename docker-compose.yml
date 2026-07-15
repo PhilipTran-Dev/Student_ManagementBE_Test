@@ -35,7 +35,9 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=123
-      - POST=postgres_class_data:/var/lib/postgresql/data
+      - POSTGRES_DB=class_service font-bold
+    volumes:
+      - postgres_class_data:/var/lib/postgresql/data
     networks:
       - classroom-network
 
@@ -108,7 +110,7 @@ services:
       - DB_NAME=class_service
       - DB_USER=postgres
       - DB_PASSWORD=123
-      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ENDPOINT=http://192.168.66.133:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=classroom-materials
@@ -141,7 +143,7 @@ services:
       - DB_NAME=assignment_service
       - DB_USER=postgres
       - DB_PASSWORD=123
-      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ENDPOINT=http://192.168.66.133:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=assignment-materials
