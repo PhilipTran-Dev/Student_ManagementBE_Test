@@ -58,7 +58,7 @@ public class AssignmentService {
     }
 
     @Transactional
-    public Assignment updateAssignment(Long id, AssignmentRequest request, List<MultipartFile> files) {
+    public Assignment updateAssignment(Long id, AssignmentUpdateRequest request, List<MultipartFile> files) {
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found with id: " + id));
 

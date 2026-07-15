@@ -53,7 +53,7 @@ public class AssignmentController {
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<Assignment> updateAssignment(
             @PathVariable Long id,
-            @RequestPart("data") @Valid AssignmentRequest request,
+            @RequestPart("data") @Valid AssignmentUpdateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
         return ResponseEntity.ok(assignmentService.updateAssignment(id, request, files));
     }
