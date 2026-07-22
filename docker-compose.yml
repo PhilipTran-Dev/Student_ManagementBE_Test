@@ -11,6 +11,22 @@ services:
     networks:
       - classroom-network
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: gateway_service/Dockerfile
+    image: phucngo249/gateway-service:latest
+    container_name: gateway-service-app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_URL=http://discovery-service-app:8761/eureka/
+    depends_on:
+      - discovery-service
+    networks:
+      - classroom-network
+
   postgres-user-db:
     image: postgres:15-alpine
     container_name: postgres-user-container
@@ -35,7 +51,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=class_service font-bold
+      - POSTGRES_DB=class_service
     volumes:
       - postgres_class_data:/var/lib/postgresql/data
     networks:
@@ -79,8 +95,6 @@ services:
     image: phucngo249/user-service:latest
     container_name: user-service-app
     restart: always
-    ports:
-      - "8081:8081"
     environment:
       - DB_HOST=postgres-user-db
       - DB_PORT=5432
@@ -102,15 +116,13 @@ services:
     image: phucngo249/class-service:latest
     container_name: class-service-app
     restart: always
-    ports:
-      - "8082:8082"
     environment:
       - DB_HOST=postgres-class-db
       - DB_PORT=5432
       - DB_NAME=class_service
       - DB_USER=postgres
       - DB_PASSWORD=123
-      - MINIO_ENDPOINT=http://192.168.66.133:9000
+      - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=classroom-materials
@@ -135,15 +147,13 @@ services:
     image: phucngo249/assignment-service:latest
     container_name: assignment-service-app
     restart: always
-    ports:
-      - "8083:8083"
     environment:
       - DB_HOST=postgres-assignment-db
       - DB_PORT=5432
       - DB_NAME=assignment_service
       - DB_USER=postgres
       - DB_PASSWORD=123
-      - MINIO_ENDPOINT=http://192.168.66.133:9000
+      - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=supersecretpassword
       - MINIO_BUCKET=assignment-materials

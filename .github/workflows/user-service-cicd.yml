@@ -62,6 +62,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push Gateway Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./gateway_service/Dockerfile
+          push: true
+          tags: phucngo249/gateway-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy:
     needs: build-and-push
     runs-on: self-hosted

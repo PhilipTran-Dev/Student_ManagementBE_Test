@@ -30,6 +30,7 @@
         <module>class_service</module>
         <module>discovery_service</module>
         <module>assignment_service</module>
+        <module>gateway_service</module>
     </modules>
 
     <dependencyManagement>
